@@ -2,6 +2,10 @@
   "name": "debug-with-coverage",
   "displayName": "debug-with-coverage",
   "description": "VS Code extension that highlights executed lines in real-time during debugging",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:TercerPiso/vsc-debug-with-coverage.git"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.97.0"

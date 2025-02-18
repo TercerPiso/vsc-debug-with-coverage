@@ -1,26 +1,66 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+// Import VS Code API
 import * as vscode from 'vscode';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+let highlightDecoration: vscode.TextEditorDecorationType;
+let activeEditor: vscode.TextEditor | undefined;
+let highlightedLines: Set<number> = new Set();
+
 export function activate(context: vscode.ExtensionContext) {
+    activeEditor = vscode.window.activeTextEditor;
+    
+    if (!activeEditor) {
+        return;
+    }
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "debug-with-coverage" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('debug-with-coverage.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from debug-with-coverage!');
-	});
-
-	context.subscriptions.push(disposable);
+    highlightDecoration = vscode.window.createTextEditorDecorationType({
+        backgroundColor: 'rgba(87, 255, 0, 0.3)',
+        isWholeLine: true
+    });
+    
+    vscode.debug.onDidChangeActiveDebugSession(session => {
+        if (session) {
+            startTrackingExecution();
+        }
+    });
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+function startTrackingExecution() {
+    vscode.debug.registerDebugAdapterTrackerFactory('*', {
+        createDebugAdapterTracker(session: vscode.DebugSession) {
+            return {
+                onDidSendMessage: (message: any) => {
+                    if (message.event === 'stopped' && message.body && message.body.threadId) {
+                        updateHighlight();
+                    }
+                }
+            };
+        }
+    });
+}
+
+function updateHighlight() {
+    if (!vscode.debug.activeDebugSession) return;
+    
+    const stackTraceRequest = { command: 'stackTrace', arguments: { threadId: 1 } };
+    
+    vscode.debug.activeDebugSession.customRequest('stackTrace', stackTraceRequest.arguments).then(response => {
+        if (!response.stackFrames || response.stackFrames.length === 0) return;
+        
+        const frame = response.stackFrames[0];
+        const line = frame.line - 1;
+        highlightedLines.add(line);
+
+        if (activeEditor) {
+            const decorations = Array.from(highlightedLines).map(line => ({
+                range: new vscode.Range(line, 0, line, 0)
+            }));
+            activeEditor.setDecorations(highlightDecoration, decorations);
+        }
+    });
+}
+
+export function deactivate() {
+    if (highlightDecoration) {
+        highlightDecoration.dispose();
+    }
+}
