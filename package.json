@@ -6,6 +6,7 @@
     "type": "git",
     "url": "git@github.com:TercerPiso/vsc-debug-with-coverage.git"
   },
+  "publisher": "Tercer Piso LLC.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.97.0"
