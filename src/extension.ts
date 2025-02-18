@@ -13,13 +13,41 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     highlightDecoration = vscode.window.createTextEditorDecorationType({
-        backgroundColor: 'rgba(87, 255, 0, 0.3)',
+		backgroundColor: 'rgba(87, 255, 0, 0.3)',
         isWholeLine: true
     });
     
     vscode.debug.onDidChangeActiveDebugSession(session => {
         if (session) {
             startTrackingExecution();
+        }
+    });
+
+    // Agregar botón de 'Debug with Coverage'
+    context.subscriptions.push(vscode.commands.registerCommand('extension.debugWithCoverage', async () => {
+        if (!vscode.debug.activeDebugSession) {
+            vscode.window.showErrorMessage('No active debug session found. Start a debugging session first.');
+            return;
+        }
+
+        vscode.debug.startDebugging(undefined, {
+            name: 'Debug with Coverage',
+            type: 'node',
+            request: 'launch',
+            program: '${file}',
+            runtimeArgs: ['--coverage']
+        });
+    }));
+
+    vscode.debug.registerDebugConfigurationProvider('node', {
+        provideDebugConfigurations(folder, token) {
+            return [{
+                name: 'Debug with Coverage',
+                type: 'node',
+                request: 'launch',
+                program: '${file}',
+                runtimeArgs: ['--coverage']
+            }];
         }
     });
 }
@@ -64,3 +92,4 @@ export function deactivate() {
         highlightDecoration.dispose();
     }
 }
+
