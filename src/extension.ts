@@ -68,17 +68,22 @@ function startTrackingExecution() {
 
 function updateHighlight() {
     if (!vscode.debug.activeDebugSession) return;
-    
-    const stackTraceRequest = { command: 'stackTrace', arguments: { threadId: 1 } };
-    
-    vscode.debug.activeDebugSession.customRequest('stackTrace', stackTraceRequest.arguments).then(response => {
+
+    vscode.debug.activeDebugSession.customRequest('stackTrace', { threadId: 1 }).then(response => {
         if (!response.stackFrames || response.stackFrames.length === 0) return;
-        
+
         const frame = response.stackFrames[0];
+        let filePath = frame.source?.path || '';
+        
+        // Asegurar que estamos en el archivo correcto (conversión de dist a src)
+        if (filePath.includes('/dist/')) {
+            filePath = filePath.replace('/dist/', '/src/').replace('.js', '.ts');
+        }
+
         const line = frame.line - 1;
         highlightedLines.add(line);
 
-        if (activeEditor) {
+        if (activeEditor && activeEditor.document.uri.fsPath === filePath) {
             const decorations = Array.from(highlightedLines).map(line => ({
                 range: new vscode.Range(line, 0, line, 0)
             }));
@@ -86,6 +91,20 @@ function updateHighlight() {
         }
     });
 }
+
+const isTypeScriptProject = async () => {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) return false;
+
+    for (const folder of workspaceFolders) {
+        const tsConfig = vscode.Uri.joinPath(folder.uri, 'tsconfig.json');
+        const result = await vscode.workspace.fs.stat(tsConfig).then(() => true, () => false);
+        if (result) {
+            return true;
+        }
+    }
+    return false;
+};
 
 export function deactivate() {
     if (highlightDecoration) {
