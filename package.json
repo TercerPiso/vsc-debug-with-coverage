@@ -13,16 +13,16 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "debug-with-coverage.helloWorld",
-        "title": "Hello World"
+        "command": "extension.debugWithCoverage",
+        "title": "Debug with Coverage"
       }
     ]
   },
+  "activationEvents": ["*"],
   "scripts": {
     "vscode:prepublish": "pnpm run package",
     "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",

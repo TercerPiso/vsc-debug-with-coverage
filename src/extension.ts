@@ -7,7 +7,7 @@ let highlightedLines: Set<number> = new Set();
 
 export function activate(context: vscode.ExtensionContext) {
     activeEditor = vscode.window.activeTextEditor;
-    
+
     if (!activeEditor) {
         return;
     }
@@ -18,6 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
     
     vscode.debug.onDidChangeActiveDebugSession(session => {
+        console.log("Debug session changed:", session);
         if (session) {
             startTrackingExecution();
         }
@@ -25,6 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Agregar botón de 'Debug with Coverage'
     context.subscriptions.push(vscode.commands.registerCommand('extension.debugWithCoverage', async () => {
+        console.log("Debug with Coverage command executed.");
         if (!vscode.debug.activeDebugSession) {
             vscode.window.showErrorMessage('No active debug session found. Start a debugging session first.');
             return;
@@ -83,9 +85,11 @@ function updateHighlight() {
         const line = frame.line - 1;
         highlightedLines.add(line);
 
+        console.log('Highlighted lines:', highlightedLines);
+
         if (activeEditor && activeEditor.document.uri.fsPath === filePath) {
             const decorations = Array.from(highlightedLines).map(line => ({
-                range: new vscode.Range(line, 0, line, 0)
+                range: new vscode.Range(line, 0, line, 10)
             }));
             activeEditor.setDecorations(highlightDecoration, decorations);
         }
